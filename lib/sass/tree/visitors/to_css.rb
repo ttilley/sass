@@ -57,7 +57,7 @@ class Sass::Tree::Visitors::ToCss < Sass::Tree::Visitors::Base
 
   def visit_comment(node)
     return if node.invisible?
-    spaces = ('  ' * [@tabs - node.value[/^ */].size, 0].max)
+    spaces = (node.indent_with * [@tabs - node.value[/^ */].size, 0].max)
 
     content = node.value.gsub(/^/, spaces).gsub(%r{^(\s*)//(.*)$}) do |md|
       "#{$1}/*#{$2} */"
@@ -82,7 +82,7 @@ MESSAGE
     result = if node.style == :compressed
                "#{node.value}{"
              else
-               "#{'  ' * @tabs}#{node.value} {" + (node.style == :compact ? ' ' : "\n")
+               "#{node.indent_with * @tabs}#{node.value} {" + (node.style == :compact ? ' ' : "\n")
              end
     was_prop = false
     first = true
@@ -120,7 +120,7 @@ MESSAGE
   end
 
   def visit_prop(node)
-    tab_str = '  ' * (@tabs + node.tabs)
+    tab_str = node.indent_with * (@tabs + node.tabs)
     if node.style == :compressed
       "#{tab_str}#{node.resolved_name}:#{node.resolved_value}#{'!important' if node.important}"
     else
@@ -137,7 +137,7 @@ MESSAGE
           when :compressed; ""
           else; " "
         end
-      rule_indent = '  ' * @tabs
+      rule_indent = node.indent_with * @tabs
       per_rule_indent, total_indent = [:nested, :expanded].include?(node.style) ? [rule_indent, ''] : ['', rule_indent]
 
       joined_rules = node.resolved_rules.members.map do |seq|
@@ -151,8 +151,8 @@ MESSAGE
       total_rule = total_indent << joined_rules
 
       to_return = ''
-      old_spaces = '  ' * @tabs
-      spaces = '  ' * (@tabs + 1)
+      old_spaces = node.indent_with * @tabs
+      spaces = node.indent_with * (@tabs + 1)
       if node.style != :compressed
         if node.options[:debug_info]
           to_return << visit(debug_info_rule(node.debug_info, node.options)) << "\n"
